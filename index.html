@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rebate Forms</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=15" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div>
+        <div class="brand-name">Rebate Forms</div>
+        <div class="brand-sub">Enter a job once · get every rebate form filled out</div>
+      </div>
+    </div>
+    <nav>
+      <button class="nav-btn" id="btnJobs">My jobs</button>
+      <button class="nav-btn" id="btnSettings">Company</button>
+    </nav>
+  </header>
+
+  <!-- Progress across the top -->
+  <div class="progress-wrap">
+    <ol class="steps" id="stepList"></ol>
+  </div>
+
+  <main class="layout">
+    <!-- The current step -->
+    <section class="panel">
+      <div id="stepContainer"></div>
+      <div class="navrow">
+        <button class="secondary" id="btnBack">← Back</button>
+        <span class="saved" id="savedNote"></span>
+        <button class="primary" id="btnNext">Continue →</button>
+      </div>
+    </section>
+
+    <!-- Right: running summary of the job -->
+    <aside class="summary">
+      <div class="summary-card">
+        <div class="eyebrow">Current job</div>
+        <div class="jobname" id="jobName">New job</div>
+        <div class="jobaddr" id="jobAddr">No address yet</div>
+        <dl class="facts" id="jobFacts"></dl>
+      </div>
+      <div class="tip">Answers save automatically in this browser. Nothing is uploaded.</div>
+    </aside>
+  </main>
+
+  <!-- Jobs dialog -->
+  <dialog id="jobsDialog">
+    <h2>My jobs</h2>
+    <p class="muted">Saved in this browser only.</p>
+    <div id="jobsList"></div>
+    <div class="dialog-actions">
+      <button class="secondary" data-close>Close</button>
+      <button class="primary" id="btnNewJob">+ New job</button>
+    </div>
+  </dialog>
+
+  <!-- Settings dialog -->
+  <dialog id="settingsDialog">
+    <h2>Company info</h2>
+    <p class="muted">Pre-filled on every application as the contractor / assignee.</p>
+    <div id="settingsForm" class="grid"></div>
+    <div class="dialog-actions">
+      <button class="secondary" data-close>Cancel</button>
+      <button class="primary" id="btnSaveSettings">Save</button>
+    </div>
+  </dialog>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="config.js?v=15"></script>
+  <script src="fill.js?v=15"></script>
+  <script src="app.js?v=15"></script>
+</body>
+</html>

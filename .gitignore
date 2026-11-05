@@ -1,0 +1,10 @@
+# Never commit customer data
+*_packet.zip
+*_job.json
+jobs/
+output/
+
+# Editor / OS clutter
+.DS_Store
+Thumbs.db
+.vscode/
