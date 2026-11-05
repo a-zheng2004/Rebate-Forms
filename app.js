@@ -211,7 +211,7 @@ let lastShownStep = null;
 function renderStepList() {
   $("#stepList").innerHTML = STEPS.map((s, i) => `
     <li class="${i === state.job.step ? "active" : ""} ${stepComplete(s) ? "done" : ""}" data-step="${i}">
-      <span class="dot">${stepComplete(s) ? "✓" : i + 1}</span>${s.title}</li>`).join("");
+      <span class="dot">${stepComplete(s) ? "✓" : i + 1}</span><span class="label">${s.title}</span></li>`).join("");
   $("#stepList").querySelectorAll("li").forEach((li) =>
     li.addEventListener("click", () => { state.job.step = Number(li.dataset.step); saveJob(); render(); }));
   // On narrow screens, slide the tab strip sideways so the current step is visible.

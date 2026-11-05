@@ -156,12 +156,16 @@ dialog h2 { margin: 0 0 4px; font-weight: 700; text-transform: uppercase; letter
   .brand-sub { display: none; }
   .panel { padding: 24px 18px; box-shadow: 4px 4px 0 var(--shade); }
   .grid, .doclist { grid-template-columns: minmax(0, 1fr); }
-  .steps li { min-width: auto; }
+  .steps li { min-width: auto; flex: none; white-space: nowrap; }
 }
 .downloads h3 { display: table; }
-.steps li { overflow: hidden; text-overflow: ellipsis; }
 
 .subhead { margin: 22px 0 12px; padding-top: 16px; border-top: 2px dashed #3a3e44; font-family: "JetBrains Mono", monospace;
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); }
 .link-btn { background: none; border: none; box-shadow: none; padding: 0; color: var(--yellow); text-decoration: underline; font-weight: 700; }
 .link-btn:hover { transform: none; box-shadow: none; }
+
+/* Step tabs: equal widths on desktop; long names wrap to a second line instead of being cut off */
+.steps li { flex: 1 1 0; min-width: 0; white-space: normal; line-height: 1.2; font-size: 12.5px; padding: 8px 10px; min-height: 46px; }
+.steps li .label { min-width: 0; overflow-wrap: normal; }
+@media (max-width: 1180px) { .steps li { flex: none; white-space: nowrap; min-height: 0; } }
