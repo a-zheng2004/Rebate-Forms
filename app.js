@@ -306,6 +306,7 @@ async function loadNeep() {
     o.fav = fav.has(String(o.brand).toLowerCase());
     return o;
   });
+  state.neepByAhri = new Map(state.neep.map((r) => [String(r.ahri), r]));
   return state.neep;
 }
 
@@ -381,23 +382,27 @@ function renderEquipment(box) {
         </div>
       </div>`).join("") + (controls.length < 10 ? `<button class="secondary" id="addUnit">+ Add another unit</button>` : "")
     : f.fossilRemains === "No" ? `<div class="note">No integrated controls will be entered. Note: the workbook only calculates a system's rebate once a "Unit Controlled" is chosen, so if PSEG needs one listed (for example as "No Fossil Fuel Heater"), answer Yes and add it.</div>` : "") +
-    `<h3>Heat pump systems</h3>`);
+    `<h3>Heat pump systems</h3>
+    <div class="mj-totals" id="mjTotals"></div>`);
   box.insertAdjacentHTML("beforeend", systems.map((s, i) => `
     <div class="system" data-i="${i}">
       <div class="system-head"><strong>System ${i + 1}</strong>
         ${systems.length > 1 ? `<button class="danger" data-remove="${i}">Remove</button>` : ""}</div>
-      <div class="field full"><label>Search NEEP list (model # or AHRI #)</label>
+      <div class="field full search-field"><label>Search NEEP list (model # or AHRI #)</label>
         <input class="neep-search" placeholder="e.g. MXZ-3C24NAHZ or 211234567" autocomplete="off">
         <div class="results" hidden></div></div>
       ${s.ahri ? pickedHtml(s) : ""}
       <div class="grid">
         <div class="field"><label>AHRI reference number <span class="req">*</span></label><input data-sys="ahri" value="${esc(s.ahri)}"></div>
         <div class="field"><label>Total installed cost ($) <span class="req">*</span></label><input data-sys="cost" type="number" step="any" value="${esc(s.cost)}"></div>
-        <div class="field"><label>Manual J cooling load (BTUh, sensible + latent) <span class="req">*</span></label><input data-sys="mjCool" type="number" value="${esc(s.mjCool)}"></div>
-        <div class="field"><label>Manual J heating load (BTUh) <span class="req">*</span></label><input data-sys="mjHeat" type="number" value="${esc(s.mjHeat)}"></div>
+        <div class="field"><label>Manual J cooling load (BTUh) <span class="req">*</span></label><input data-sys="mjCool" type="number" value="${esc(s.mjCool)}">
+          <div class="help">Sensible + latent</div></div>
+        <div class="field"><label>Manual J heating load (BTUh) <span class="req">*</span></label><input data-sys="mjHeat" type="number" value="${esc(s.mjHeat)}">
+          <div class="help">At design conditions</div></div>
         <div class="field"><label>Condenser serial number</label><input data-sys="condSerial" value="${esc(s.condSerial)}"></div>
         <div class="field"><label>Coil / air handler serial number</label><input data-sys="coilSerial" value="${esc(s.coilSerial)}"></div>
       </div>
+      <div class="sizing" data-sizing="${i}"></div>
       ${fossil ? `
       <div class="grid" style="margin-top:16px">
         <div class="field"><label>Unit controlled (from Integrated Controls)</label>
@@ -483,8 +488,10 @@ function renderEquipment(box) {
     const i = Number(card.dataset.i);
     card.querySelectorAll("[data-sys]").forEach((el) => el.addEventListener("input", () => {
       systems[i][el.dataset.sys] = el.value;
-      if (el.dataset.sys === "ahri") Object.assign(systems[i], { brand: "", outdoor: "", indoor: "" }); // typed by hand
+      if (el.dataset.sys === "ahri") // typed by hand: forget the picked details, capacities are looked up from the NEEP list
+        Object.assign(systems[i], { brand: "", outdoor: "", indoor: "", config: "", cap95: "", cap17rated: "", cap17max: "", seer2: "", hspf2: "" });
       saveJob();
+      updateSizing();
     }));
     const input = card.querySelector(".neep-search");
     const results = card.querySelector(".results");
@@ -515,12 +522,73 @@ function renderEquipment(box) {
   box.querySelectorAll("[data-remove]").forEach((b) => b.addEventListener("click", () => {
     systems.splice(Number(b.dataset.remove), 1); saveJob(); render(true);
   }));
+  updateSizing();
   $("#addSystem")?.addEventListener("click", () => {
     systems.push({}); saveJob(); render(true);
     focusNew(`.system[data-i="${systems.length - 1}"]`, ".neep-search");
   });
 }
 const fmt = (n) => (n === null || n === undefined || n === "" ? "—" : Number(n).toLocaleString());
+// ---------- Manual J sizing check (display only) ----------
+// Same rule as the PSEG workbook (Calculations tab): PASS when the NEEP maximum heating
+// capacity at 17°F is 100%–120% of the Manual J heating load. Cooling (AHRI capacity vs
+// Manual J cooling, 65%–135% in the workbook's References) is shown for reference only.
+const SIZING = { heatLow: 1.0, heatHigh: 1.2, coolLow: 0.65, coolHigh: 1.35 };
+const toNum = (v) => { const n = Number(String(v ?? "").replace(/[$,\s]/g, "")); return v === "" || v == null || !Number.isFinite(n) ? null : n; };
+
+function capsFor(s) {
+  if (toNum(s.cap17max) != null || toNum(s.cap95) != null) return { cool: toNum(s.cap95), heat: toNum(s.cap17max), found: true };
+  if (!s.ahri) return { found: false };
+  if (!state.neepByAhri) return { loading: true };
+  const r = state.neepByAhri.get(String(s.ahri).trim());
+  return r ? { cool: toNum(r.cap95), heat: toNum(r.cap17max), found: true } : { found: false, notFound: true };
+}
+
+function sizingRow(title, cap, capLabel, load, loadLabel, low, high, decides) {
+  if (cap == null) return `<div class="sz-row"><span class="sz-title">${title}</span><span class="sz-note">No ${capLabel} on the NEEP list for this AHRI #</span></div>`;
+  if (load == null || load <= 0) return `<div class="sz-row"><span class="sz-title">${title}</span><span class="sz-note">Enter the ${loadLabel} to check sizing</span></div>`;
+  const pct = cap / load;
+  const ok = pct >= low && pct <= high;
+  const badge = decides ? (ok ? '<b class="sz-badge pass">PASS</b>' : '<b class="sz-badge fail">FAIL</b>')
+                        : (ok ? '<b class="sz-badge ref">In range</b>' : '<b class="sz-badge warn">Out of range</b>');
+  return `<div class="sz-row"><span class="sz-title">${title}</span>
+    <span class="sz-calc">${fmt(cap)} ÷ ${fmt(load)} = <b>${Math.round(pct * 100)}%</b> <span class="muted">(needs ${Math.round(low * 100)}–${Math.round(high * 100)}%)</span></span>${badge}</div>`;
+}
+
+function updateSizing() {
+  const systems = state.job.systems;
+  let needNeep = false;
+  systems.forEach((s, i) => {
+    const el = document.querySelector(`[data-sizing="${i}"]`);
+    if (!el) return;
+    const c = capsFor(s);
+    if (c.loading) { needNeep = true; el.innerHTML = '<div class="sz-row"><span class="sz-note">Looking up capacities…</span></div>'; return; }
+    if (!s.ahri) { el.innerHTML = '<div class="sz-row"><span class="sz-title">Manual J</span><span class="sz-note">Pick equipment from the NEEP list to check sizing</span></div>'; return; }
+    if (c.notFound) { el.innerHTML = '<div class="sz-row"><span class="sz-title">Manual J</span><span class="sz-note">AHRI # not found on the NEEP list — sizing can\'t be checked</span></div>'; return; }
+    el.innerHTML =
+      sizingRow("Manual J (pass/fail)", c.heat, "17°F max heating capacity", toNum(s.mjHeat), "Manual J heating load", SIZING.heatLow, SIZING.heatHigh, true) +
+      sizingRow("Cooling sizing (reference)", c.cool, "cooling capacity", toNum(s.mjCool), "Manual J cooling load", SIZING.coolLow, SIZING.coolHigh, false);
+  });
+
+  // Totals, like the workbook's Equipment Summary
+  const box = $("#mjTotals");
+  if (box) {
+    const sum = (k) => systems.reduce((t, s) => t + (toNum(s[k]) || 0), 0);
+    const checks = systems.map((s) => { const c = capsFor(s); const h = toNum(s.mjHeat);
+      return c.heat != null && h > 0 ? (c.heat / h >= SIZING.heatLow && c.heat / h <= SIZING.heatHigh) : null; }).filter((x) => x !== null);
+    const passed = checks.filter(Boolean).length;
+    box.innerHTML = `
+      <div><span>Total cooling Manual J</span><b>${fmt(sum("mjCool")) === "0" ? "—" : fmt(sum("mjCool")) + " BTUh"}</b></div>
+      <div><span>Total heating Manual J</span><b>${fmt(sum("mjHeat")) === "0" ? "—" : fmt(sum("mjHeat")) + " BTUh"}</b></div>
+      <div><span>Total installed cost</span><b>${sum("cost") ? "$" + fmt(sum("cost")) : "—"}</b></div>
+      <div><span>Manual J checks</span><b class="${checks.length && passed < checks.length ? "fail-text" : checks.length ? "pass-text" : ""}">${checks.length ? `${passed} of ${checks.length} pass` : "—"}</b></div>`;
+  }
+  if (needNeep) loadNeep().then((list) => {
+    state.neepByAhri ||= new Map(list.map((r) => [String(r.ahri), r]));
+    updateSizing();
+  });
+}
+
 function pickedHtml(s) {
   if (!s.brand) return "";
   return `<div class="picked">

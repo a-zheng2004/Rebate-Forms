@@ -112,7 +112,7 @@ input.invalid, select.invalid { border-color: var(--coral); background: #2a1915;
 .note { background: var(--field); border: 2px dashed #4a4d52; padding: 12px 14px; font-size: 13px; margin-top: 16px; color: var(--muted); }
 
 /* ---------- Equipment ---------- */
-.system { border: 2px solid #4a4d52; padding: 24px 20px 20px; margin: 28px 0 18px; position: relative; background: var(--surface-2); }
+.system { border: 2px solid #4a4d52; padding: 32px 20px 22px; margin: 28px 0 18px; position: relative; background: var(--surface-2); }
 .system-head { position: absolute; top: -15px; left: 14px; right: 14px; display: flex; justify-content: space-between; align-items: center; }
 .system-head strong { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; background: var(--yellow); color: var(--on-accent); padding: 4px 10px; }
 .system-head .danger { background: var(--surface-2); }
@@ -169,3 +169,29 @@ dialog h2 { margin: 0 0 4px; font-weight: 700; text-transform: uppercase; letter
 .steps li { flex: 1 1 0; min-width: 0; white-space: normal; line-height: 1.2; font-size: 12.5px; padding: 8px 10px; min-height: 46px; }
 .steps li .label { min-width: 0; overflow-wrap: normal; }
 @media (max-width: 1180px) { .steps li { flex: none; white-space: nowrap; min-height: 0; } }
+
+/* ---------- Equipment step spacing ---------- */
+.search-field { margin-bottom: 20px; }
+.system .grid { row-gap: 20px; }
+.picked { margin-top: 4px; }
+
+/* ---------- Manual J sizing (display only) ---------- */
+.mj-totals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 2px solid var(--edge); margin: 4px 0 8px; background: var(--field); }
+.mj-totals > div { padding: 12px 14px; border-right: 2px solid #3a3e44; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mj-totals > div:last-child { border-right: none; }
+.mj-totals span { font-family: "JetBrains Mono", monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.mj-totals b { font-size: 17px; }
+.pass-text { color: var(--teal); }
+.fail-text { color: var(--coral); }
+.sizing { margin-top: 20px; border: 2px solid #3a3e44; background: var(--field); }
+.sz-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; flex-wrap: wrap; font-size: 13px; }
+.sz-row + .sz-row { border-top: 1px dashed #3a3e44; }
+.sz-title { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; min-width: 190px; }
+.sz-calc { flex: 1; min-width: 0; }
+.sz-note { color: var(--muted); flex: 1; }
+.sz-badge { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 3px 10px; letter-spacing: .5px; }
+.sz-badge.pass { background: var(--teal); color: var(--on-accent); }
+.sz-badge.fail { background: var(--coral); color: var(--on-accent); }
+.sz-badge.ref { border: 2px solid var(--teal); color: var(--teal); padding: 1px 8px; }
+.sz-badge.warn { border: 2px solid var(--yellow); color: var(--yellow); padding: 1px 8px; }
+@media (max-width: 760px) { .mj-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mj-totals > div:nth-child(2) { border-right: none; } .mj-totals > div:nth-child(-n+2) { border-bottom: 2px solid #3a3e44; } .sz-title { min-width: 0; width: 100%; } }

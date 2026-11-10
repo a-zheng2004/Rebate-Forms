@@ -4,6 +4,9 @@
 jobs/
 output/
 
+# Office temporary / lock files (created while a template is open in Excel)
+~$*
+
 # Editor / OS clutter
 .DS_Store
 Thumbs.db
